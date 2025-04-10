@@ -1,15 +1,11 @@
-from pydantic import BaseModel
+from enum import Enum
 
 
-class ErrorRequest(BaseModel):
-    errors_codes: int
+class ErrorRequest(Enum):
+    USER_ALREADY_REGISTERED = 4001,
+    EMAIL_DOES_NOT_COMPLY_WITH_FORMAT = 4002,
+    WRONG_COUNTRY_CODE = 4003,
+    WRONG_PHONE_FORMAT = 4004,
+    WRONG_PIN_FORMAT = 4005,
+    INTERNAL_SERVER_ERROR = 4006.
 
-
-errors_codes = {
-    4001: "El usuario ya registrado",
-    4002: "correo no cumple formato",
-    4003: "codigo de pais incorrecto",
-    4004: "formato de telefono incorrecto",
-    4005: "formato de pin incorrecto",
-
-}

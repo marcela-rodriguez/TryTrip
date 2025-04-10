@@ -1,13 +1,14 @@
 from fastapi import FastAPI
-from register.models import Register
-from register.register import register_user
+from users.models import User
+from users import services
+from typing import Dict
 
 
 app = FastAPI()
 
-@app.post("/register")
-def register(register_date: Register)-> dict:
-    result = register_user(info=register_date)
+@app.post("/users")
+def create_user(creare_date:User)-> Dict:
+    result = services.create_user(info=creare_date)
     return result
 
 
