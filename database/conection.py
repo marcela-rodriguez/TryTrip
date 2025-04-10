@@ -1,11 +1,14 @@
 from pymongo import MongoClient
-from local_setings import MONGO_URL
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Carga las variables desde el archivo .env
 
 # URI de conexión a MongoDB (ajústala según tu configuración)
-MONGO_URI = MONGO_URL
+MONGO_URL = os.getenv("MONGO_URL")
 
 # Crear la conexión
-client = MongoClient(MONGO_URI)
+client = MongoClient(MONGO_URL)
 
 # Seleccionar la base de datos
 db = client["Trytri"]

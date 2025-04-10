@@ -8,6 +8,9 @@ Sitios turísticos
 
 Estos servicios están clasificados según los más cercanos a tu ubicación, tus preferencias personales y las mejores calificaciones de otros usuarios, garantizando una experiencia personalizada y confiable para que disfrutes de tus viajes al máximo.
 
+Version de Python 
+Python 3.11.6
+
 Instalación 
 1. Clona el repositorio:
     git clone https://github.com/marcela-rodriguez/TryTrip.git
