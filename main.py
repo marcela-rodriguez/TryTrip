@@ -8,7 +8,7 @@ app = FastAPI()
 
 @app.post("/users")
 def create_user(creare_date:User)-> Dict:
-    result = services.create_user(info=creare_date)
+    result = services.create_user(data_user=creare_date)
     return result
 
 
