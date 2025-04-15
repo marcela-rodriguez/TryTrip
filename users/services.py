@@ -7,21 +7,20 @@ from regular_expression import regex
 from users import exceptions
 import re
 
-def validate_user(data_user: User):
-    if re.fullmatch(pattern=regex.EMAIL_REGEX, string=data_user.email) is None:
+def validate_user(user: User):
+    if re.fullmatch(pattern=regex.EMAIL_REGEX, string=user.email) is None:
         raise exceptions.EmailNotMatch()
-    if re.fullmatch(pattern=regex.CODE_COUNTRY_REGEX, string=data_user.phone_country_code) is None:
+    if re.fullmatch(pattern=regex.CODE_COUNTRY_REGEX, string=user.phone_country_code) is None:
         raise exceptions.InvalidCountryFormat()
-    if re.fullmatch(pattern=regex.PHONE_NUMBER_REGEX, string=data_user.phone_number) is None:
+    if re.fullmatch(pattern=regex.PHONE_NUMBER_REGEX, string=user.phone_number) is None:
         raise exceptions.InvalidPhoneFormat()
-    if re.fullmatch(pattern=regex.PIN, string=str(data_user.pin)) is None:
+    if re.fullmatch(pattern=regex.PIN, string=str(user.pin)) is None:
         raise exceptions.InvalidPinFormat()
 
-def create_user(data_user: User) -> Dict:
+def create_user(user: User) -> Dict:
     try:
-        user = data_user.model_dump()
-        validate_user(data_user=data_user)
-        response_email = db.get_user_by_email(email=user.get("email"))
+        validate_user(user=user)
+        response_email = db.get_user_by_email(email=user.email)
         if response_email:
             return {
                 "success": False,
@@ -29,12 +28,12 @@ def create_user(data_user: User) -> Dict:
                 "error": [{
                     "code": ErrorRequest.USER_ALREADY_REGISTERED,
                     "title": "User already registered",
-                    "message": f"User with email {data_user.email} is already registered."
+                    "message": f"User with email {user.email} is already registered."
                 }
                 ]
             }
         else:
-            info_user = db.insert_user(user=user)
+            info_user = db.insert_user(user=user.model_dump())
             del info_user['pin']
             return {
                 "success": True,
@@ -49,7 +48,7 @@ def create_user(data_user: User) -> Dict:
                 {
                     "code": ErrorRequest.EMAIL_DOES_NOT_COMPLY_WITH_FORMAT,
                     "title": "Email does not comply with format",
-                    "message": f"Email {data_user.email} does not meet the email parameters"
+                    "message": f"Email {user.email} does not meet the email parameters"
                 }
             ]
         }
@@ -61,7 +60,7 @@ def create_user(data_user: User) -> Dict:
                 {
                     "code": ErrorRequest.WRONG_COUNTRY_CODE,
                     "title": "Wrong country code",
-                    "message": f"Country code {data_user.phone_country_code} does not meet the required format"
+                    "message": f"Country code {user.phone_country_code} does not meet the required format"
                 }
             ]
         }
@@ -73,7 +72,7 @@ def create_user(data_user: User) -> Dict:
                 {
                     "code": ErrorRequest.WRONG_PHONE_FORMAT,
                     "title": "Wrong phone format",
-                    "message": f" Phone {data_user.phone_number} does not meet the required format"
+                    "message": f" Phone {user.phone_number} does not meet the required format"
                 }
             ]
         }
@@ -85,7 +84,7 @@ def create_user(data_user: User) -> Dict:
                 {
                     "code": ErrorRequest.WRONG_PIN_FORMAT,
                     "title": "Wrong pin format",
-                    "message": f"Pin {data_user.pin} does not meet the required format"
+                    "message": f"Pin {user.pin} does not meet the required format"
                 }
             ]
         }
