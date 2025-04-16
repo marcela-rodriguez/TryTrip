@@ -7,6 +7,6 @@ from typing import Dict
 app = FastAPI()
 
 @app.post("/users")
-def create_user(creare_user:User)-> Dict:
-    result = services.create_user(user=creare_user)
+def create_user(user:User)-> Dict:
+    result = services.create_user(user=user)
     return result

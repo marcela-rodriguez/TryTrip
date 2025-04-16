@@ -7,6 +7,7 @@ from regular_expression import regex
 from users import exceptions
 import re
 
+
 def validate_user(user: User):
     if re.fullmatch(pattern=regex.EMAIL_REGEX, string=user.email) is None:
         raise exceptions.EmailNotMatch()
@@ -16,6 +17,7 @@ def validate_user(user: User):
         raise exceptions.InvalidPhoneFormat()
     if re.fullmatch(pattern=regex.PIN, string=str(user.pin)) is None:
         raise exceptions.InvalidPinFormat()
+
 
 def create_user(user: User) -> Dict:
     try:
@@ -90,6 +92,7 @@ def create_user(user: User) -> Dict:
         }
     except Exception as e:
         traceback.print_exc()
+        print(e)
         return {
             "success": False,
             "payload": {},
@@ -97,7 +100,7 @@ def create_user(user: User) -> Dict:
                 {
                     "code": ErrorRequest.INTERNAL_SERVER_ERROR,
                     "title": "Internal Server Error.",
-                    "message": f"Internal Server Error: {e}."
+                    "message": f"Internal Server Error."
                 }
             ]
         }
