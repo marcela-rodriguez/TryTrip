@@ -10,5 +10,3 @@ app = FastAPI()
 def create_user(creare_user:User)-> Dict:
     result = services.create_user(user=creare_user)
     return result
-
-
