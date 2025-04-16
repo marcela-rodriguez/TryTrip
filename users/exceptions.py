@@ -1,0 +1,13 @@
+
+class EmailNotMatch(Exception): ...
+
+
+class InvalidCountryFormat(Exception): ...
+
+
+class InvalidPhoneFormat(Exception): ...
+
+
+class InvalidPinFormat(Exception): ...
+
+
