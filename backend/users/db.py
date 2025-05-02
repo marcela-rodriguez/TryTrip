@@ -1,5 +1,6 @@
 from database import conection
 from typing import Dict, Any
+from users.models import User
 
 
 def insert_user(user: Dict[str, Any]):
@@ -8,9 +9,10 @@ def insert_user(user: Dict[str, Any]):
     return user
 
 
-def get_user_by_email(email: str) -> Dict:
+def get_user_by_email(email: str) -> User | None:
     result = conection.collection.find_one({"email": email})
     if result:
         return result
     else:
-        return {}
+        return None
+
