@@ -1,6 +1,6 @@
 import traceback
 from os.path import exists
-from users.models import CreateRequest, LoginRequest
+from users.models import CreateRequest, LoginRequest, User
 from users import db
 from typing import Dict
 from regular_expression import regex
@@ -24,91 +24,14 @@ def validate_user(user: CreateRequest):
         raise exceptions.InvalidPinFormat()
 
 
-def create_user(user: CreateRequest) -> Dict:
-    try:
+def create_user(user: CreateRequest) -> User:
         validate_user(user=user)
         exists_user = db.get_user_by_email(email=user.email)
-        if exists_user:
-            return {
-                "success": False,
-                "payload": {},
-                "error": [{
-                    "code": ErrorCodes.USER_ALREADY_REGISTERED,
-                    "title": "User already registered",
-                    "message": f"User with email {user.email} is already registered."
-                }
-                ]
-            }
-        else:
+        if exists_user is None:
             user = db.insert_user(user=user.model_dump())
-            del user['pin']
-            return {
-                "success": True,
-                "payload": user,
-                "error": []
-            }
-    except exceptions.EmailNotMatch as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.EMAIL_DOES_NOT_COMPLY_WITH_FORMAT,
-                    "title": "Email does not comply with format",
-                    "message": f"Email {user.email} does not meet the email parameters"
-                }
-            ]
-        }
-    except exceptions.InvalidCountryFormat as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.WRONG_COUNTRY_CODE,
-                    "title": "Wrong country code",
-                    "message": f"Country code {user.phone_country_code} does not meet the required format"
-                }
-            ]
-        }
-    except exceptions.InvalidPhoneFormat as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.WRONG_PHONE_FORMAT,
-                    "title": "Wrong phone format",
-                    "message": f" Phone {user.phone_number} does not meet the required format"
-                }
-            ]
-        }
-    except exceptions.InvalidPinFormat as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.WRONG_PIN_FORMAT,
-                    "title": "Wrong pin format",
-                    "message": f"Pin {user.pin} does not meet the required format"
-                }
-            ]
-        }
-    except Exception as e:
-        traceback.print_exc()
-        print(e)
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.INTERNAL_SERVER_ERROR,
-                    "title": "Internal Server Error.",
-                    "message": f"Internal Server Error."
-                }
-            ]
-        }
+            return user
+        else:
+            raise exceptions.UserAlreadyRegistered()
 
 
 def validate_login_request(login: LoginRequest):
@@ -137,86 +60,16 @@ def create_tokens(user_id: str):
     return access_token, refresh_token
 
 
-def authenticate_user(login: LoginRequest) -> Dict:
-    try:
+def authenticate_user(login: LoginRequest) -> User:
         validate_login_request(login=login)
         user= db.get_user_by_email(email=login.email)
-        if user.get("email")== login.email and user.get("pin")== login.pin :
-            id = str(user.get("_id"))
-            access_token, refresh_token = create_tokens(user_id=id)
-            return_tokens = {
-                "token_type": "bearer",
-                "access_token": access_token,
-                "refresh_token": refresh_token
-
-            }
-            return {
-                "success": True,
-                "payload":return_tokens ,
-                "error": []
-            }
-
-        if user.get("pin") != login.pin:
+        print(user)
+        if not user:
+            raise exceptions.UserNotFound()
+        if user.pin != login.pin:
             print("pint invalid")
-            return {
-                "success": False,
-                "payload": {},
-                "error": [{
-                    "code": ErrorCodes.INVALID_CREDENTIALS,
-                    "title": "Invalid credentials",
-                    "message": f"Invalid credentials"
-                }
-                ]
-            }
+            raise exceptions.InvalidCredentials()
+
+        return user
 
 
-        else:
-            return {
-                "success": False,
-                "payload": {},
-                "error": [{
-                    "code": ErrorCodes.USER_NOT_FOUND,
-                    "title": "User not found",
-                    "message": f"User not found."
-                }
-                ]
-            }
-
-    except exceptions.EmailNotMatch as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.EMAIL_DOES_NOT_COMPLY_WITH_FORMAT,
-                    "title": "Email does not comply with format",
-                    "message": f"Email {login.email} does not meet the email parameters"
-                }
-            ]
-        }
-    except exceptions.InvalidPinFormat as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.WRONG_PIN_FORMAT,
-                    "title": "Wrong pin format",
-                    "message": f"Pin {login.pin} does not meet the required format"
-                }
-            ]
-        }
-    except Exception as e:
-        traceback.print_exc()
-        print(e)
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorCodes.INTERNAL_SERVER_ERROR,
-                    "title": "Internal Server Error.",
-                    "message": f"Internal Server Error."
-                }
-            ]
-        }

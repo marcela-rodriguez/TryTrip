@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class ErrorCodes(Enum):
+class ErrorCodes(IntEnum):
     USER_ALREADY_REGISTERED = 4001
     EMAIL_DOES_NOT_COMPLY_WITH_FORMAT = 4002
     WRONG_COUNTRY_CODE = 4003
