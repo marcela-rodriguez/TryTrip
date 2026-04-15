@@ -1,13 +1,19 @@
 import traceback
-from users.models import User
+from os.path import exists
+from users.models import CreateRequest, LoginRequest, User
 from users import db
-from utils.codes import ErrorRequest
 from typing import Dict
 from regular_expression import regex
 from users import exceptions
 import re
+import logging
+from utils.codes_errors import ErrorCodes
+from utils import constants
+from jose import JWTError, jwt
+from datetime import datetime, timedelta,timezone
 
-def validate_user(user: User):
+
+def validate_user(user: CreateRequest):
     if re.fullmatch(pattern=regex.EMAIL_REGEX, string=user.email) is None:
         raise exceptions.EmailNotMatch()
     if re.fullmatch(pattern=regex.CODE_COUNTRY_REGEX, string=user.phone_country_code) is None:
@@ -17,87 +23,53 @@ def validate_user(user: User):
     if re.fullmatch(pattern=regex.PIN, string=str(user.pin)) is None:
         raise exceptions.InvalidPinFormat()
 
-def create_user(user: User) -> Dict:
-    try:
+
+def create_user(user: CreateRequest) -> User:
         validate_user(user=user)
-        response_email = db.get_user_by_email(email=user.email)
-        if response_email:
-            return {
-                "success": False,
-                "payload": {},
-                "error": [{
-                    "code": ErrorRequest.USER_ALREADY_REGISTERED,
-                    "title": "User already registered",
-                    "message": f"User with email {user.email} is already registered."
-                }
-                ]
-            }
+        exists_user = db.get_user_by_email(email=user.email)
+        if exists_user is None:
+            user = db.insert_user(user=user.model_dump())
+            return user
         else:
-            info_user = db.insert_user(user=user.model_dump())
-            del info_user['pin']
-            return {
-                "success": True,
-                "payload": info_user,
-                "error": []
-            }
-    except exceptions.EmailNotMatch as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorRequest.EMAIL_DOES_NOT_COMPLY_WITH_FORMAT,
-                    "title": "Email does not comply with format",
-                    "message": f"Email {user.email} does not meet the email parameters"
-                }
-            ]
-        }
-    except exceptions.InvalidCountryFormat as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorRequest.WRONG_COUNTRY_CODE,
-                    "title": "Wrong country code",
-                    "message": f"Country code {user.phone_country_code} does not meet the required format"
-                }
-            ]
-        }
-    except exceptions.InvalidPhoneFormat as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorRequest.WRONG_PHONE_FORMAT,
-                    "title": "Wrong phone format",
-                    "message": f" Phone {user.phone_number} does not meet the required format"
-                }
-            ]
-        }
-    except exceptions.InvalidPinFormat as e:
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorRequest.WRONG_PIN_FORMAT,
-                    "title": "Wrong pin format",
-                    "message": f"Pin {user.pin} does not meet the required format"
-                }
-            ]
-        }
-    except Exception as e:
-        traceback.print_exc()
-        return {
-            "success": False,
-            "payload": {},
-            "error": [
-                {
-                    "code": ErrorRequest.INTERNAL_SERVER_ERROR,
-                    "title": "Internal Server Error.",
-                    "message": f"Internal Server Error: {e}."
-                }
-            ]
-        }
+            raise exceptions.UserAlreadyRegistered()
+
+
+def validate_login_request(login: LoginRequest):
+    if re.fullmatch(pattern=regex.EMAIL_REGEX, string=login.email) is None:
+        raise exceptions.EmailNotMatch()
+    if re.fullmatch(pattern=regex.PIN, string=str(login.pin)) is None:
+        raise exceptions.InvalidPinFormat()
+
+def create_token(data: dict, expires_delta: timedelta, secret_key: str):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc)+ expires_delta
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, secret_key, algorithm=constants.ALGORITHM)
+
+def create_tokens(user_id: str):
+    access_token = create_token(
+        {"user_id": user_id},
+        timedelta(minutes=constants.ACCESS_TOKEN_EXPIRE_MINUTES),
+        constants.ACCESS_SECRET_KEY
+    )
+    refresh_token = create_token(
+        {"user_id": user_id},
+        timedelta(days=constants.REFRESH_TOKEN_EXPIRE_DAYS),
+        constants.REFRESH_SECRET_KEY
+    )
+    return access_token, refresh_token
+
+
+def authenticate_user(login: LoginRequest) -> User:
+        validate_login_request(login=login)
+        user= db.get_user_by_email(email=login.email)
+        print(user)
+        if not user:
+            raise exceptions.UserNotFound()
+        if user.pin != login.pin:
+            print("pint invalid")
+            raise exceptions.InvalidCredentials()
+
+        return user
+
+
