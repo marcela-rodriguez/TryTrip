@@ -1,6 +1,6 @@
 import traceback
 from os.path import exists
-from users.models import CreateRequest, LoginRequest, User
+from users.models import CreateRequest, LoginRequest, User, ChangePasswordRequest
 from users import db
 from typing import Dict
 from regular_expression import regex
@@ -9,8 +9,9 @@ import re
 import logging
 from utils.codes_errors import ErrorCodes
 from utils import constants
-from jose import JWTError, jwt
+from jose import JWTError, jwt,ExpiredSignatureError
 from datetime import datetime, timedelta,timezone
+from bson import ObjectId
 
 
 def validate_user(user: CreateRequest):
@@ -71,5 +72,46 @@ def authenticate_user(login: LoginRequest) -> User:
             raise exceptions.InvalidCredentials()
 
         return user
+
+
+def authenticate_token(token: str, secre: str)->str:
+    try:
+        payload = jwt.decode(token, secre, algorithms=[constants.ALGORITHM])
+        user_id = payload.get("user_id")
+
+        if user_id is None:
+            raise exceptions.InvalidCredentialsToken()#no ceunta con el algoritmo
+
+        if not ObjectId.is_valid(user_id):
+            raise exceptions.InvalidToken()  # O una excepción de "ID malformado"
+        return user_id
+    except ExpiredSignatureError:
+    # Específicamente cuando el tiempo 'exp' ya pasó
+        raise exceptions.TokenExpired()
+
+    except JWTError:
+        raise exceptions.InvalidToken()
+
+def change_password(token:str,new_password:ChangePasswordRequest)->User:
+    user_id=authenticate_token(token=token,secre=constants.ACCESS_SECRET_KEY)
+    print(user_id)
+    if re.fullmatch(pattern=regex.PIN, string=str(new_password)) is None:
+        raise exceptions.InvalidPinFormat()
+    user=db.get_user_by_id(id=user_id)
+    if not user:
+         raise exceptions.UserNotFound()
+    print(user.pin)
+    print(new_password)
+    if user.pin == new_password:
+         raise exceptions.CurrentlyUsedPassword()
+    user_db=db.update_user_pin(user_id=user_id,new_pin=new_password)
+    if not user_db:
+        raise exceptions.UserUpdateFailed()
+
+    user.pin = new_password
+    return user
+
+
+
 
 

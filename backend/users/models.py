@@ -21,3 +21,6 @@ class User(BaseModel):
     phone_country_code: str
     phone_number: str
     pin: int
+
+class ChangePasswordRequest(BaseModel):
+    new_password: int
