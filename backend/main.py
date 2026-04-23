@@ -5,7 +5,8 @@ from typing import Dict
 from utils.codes_errors import ErrorCodes
 import traceback
 from users import exceptions
-from restaurant_on_hold import models, services as restaurant_services
+from restaurant_on_hold import exceptions as restaurant_exception, models, services as restaurant_services
+
 
 app = FastAPI()
 
@@ -187,6 +188,44 @@ def create_restaurant_on_hold(restaurant:models.CreateRestaurantOnHold)-> Dict:
                 "payload": restaurant,
                 "error": []
             }
+
+    except Exception as e:
+        traceback.print_exc()
+        print(e)
+        return {
+            "success": False,
+            "payload": {},
+            "error": [
+                {
+                    "code": ErrorCodes.INTERNAL_SERVER_ERROR,
+                    "title": "Internal Server Error.",
+                    "message": f"Internal Server Error."
+                }
+            ]
+        }
+@app.get("/restaurant_on_hold")
+def get_restaurant_on_hold()-> Dict:
+    try:
+        result_get_restaurants = restaurant_services.get_restaurants_on_hold()
+        if result_get_restaurants:
+            restaurants = result_get_restaurants  #Observacion se tiene un estandar en el payload retornar {} pero al ser una lista
+                                                    #Se investiga que seria bueno cuando es individual se retorne un {} pero al ser multiples registros se recomeinta []
+                                                    #Se deja a disucion para corregir o dejar como esta.
+            return {
+                "success": True,
+                "payload": restaurants,
+                "error": []
+            }
+    except restaurant_exception.RestaurantsOnHoldNotFounds as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.RESTAURANTS_NOT_FOUND,
+                "title": "Restaurants not found",
+                "message": "There are no restaurants registered in list yet."
+            }]
+        }
 
     except Exception as e:
         traceback.print_exc()
