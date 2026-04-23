@@ -5,7 +5,7 @@ from typing import Dict
 from utils.codes_errors import ErrorCodes
 import traceback
 from users import exceptions
-
+from restaurant_on_hold import models, services as restaurant_services
 
 app = FastAPI()
 
@@ -161,6 +161,33 @@ def login_user(login:LoginRequest)-> Dict:
                 }
             ]
         }
+    except Exception as e:
+        traceback.print_exc()
+        print(e)
+        return {
+            "success": False,
+            "payload": {},
+            "error": [
+                {
+                    "code": ErrorCodes.INTERNAL_SERVER_ERROR,
+                    "title": "Internal Server Error.",
+                    "message": f"Internal Server Error."
+                }
+            ]
+        }
+
+@app.post("/create_restaurant_on_hold")
+def create_restaurant_on_hold(restaurant:models.CreateRestaurantOnHold)-> Dict:
+    try:
+        result_create_restaurant = restaurant_services.create_restaurant_on_hold(restaurant=restaurant)
+        if result_create_restaurant:
+            restaurant = result_create_restaurant.model_dump()
+            return {
+                "success": True,
+                "payload": restaurant,
+                "error": []
+            }
+
     except Exception as e:
         traceback.print_exc()
         print(e)

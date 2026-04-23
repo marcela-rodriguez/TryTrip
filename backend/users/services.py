@@ -1,15 +1,12 @@
 import traceback
-from os.path import exists
 from users.models import CreateRequest, LoginRequest, User
 from users import db
 from typing import Dict
 from regular_expression import regex
 from users import exceptions
 import re
-import logging
-from utils.codes_errors import ErrorCodes
 from utils import constants
-from jose import JWTError, jwt
+from jose import jwt
 from datetime import datetime, timedelta,timezone
 
 

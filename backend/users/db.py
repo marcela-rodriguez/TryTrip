@@ -1,10 +1,10 @@
-from database import conection
+from database.conection import usuarios_collection
 from typing import Dict, Any
-from users.models import User,CreateRequest
+from users.models import User
 
 
 def insert_user(user: Dict) -> User:
-    result = conection.collection.insert_one(user)
+    result = usuarios_collection.insert_one(user)
     return User(
         id=str(result.inserted_id),
         names=user.get("names"),
@@ -17,7 +17,7 @@ def insert_user(user: Dict) -> User:
 
 
 def get_user_by_email(email: str) -> User | None:
-    result = conection.collection.find_one({"email": email})
+    result = usuarios_collection.find_one({"email": email})
     if result:
         return  User(
         id=str(result.get("_id")),
