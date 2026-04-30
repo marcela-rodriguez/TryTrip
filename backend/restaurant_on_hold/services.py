@@ -15,3 +15,10 @@ def get_restaurants_on_hold() -> List[RestaurantOnHold] | None:
         return restaurants
     else:
         raise exceptions.RestaurantsOnHoldNotFounds()
+
+def get_nearby_restaurants(longitude:float,latitude:float,radius_meters:int)->List[RestaurantOnHold] | None:
+    nearby_restaurants=db.get_nearby_restaurants(longitude=longitude,latitude=latitude,max_meters=radius_meters)
+    if nearby_restaurants:
+        return nearby_restaurants
+    else:
+        raise exceptions.RestaurantsOnHoldNotFounds()

@@ -4,6 +4,12 @@ from restaurant_on_hold.models import RestaurantOnHold,CreateRestaurantOnHold
 
 def insert_restaurant_on_hold(restaurant: CreateRestaurantOnHold) -> RestaurantOnHold:
     restaurant_db=restaurant.model_dump()
+    #Agregamos el formato GeoJSON
+    # IMPORTANTE: MongoDB usa el orden [Longitud, Latitud]
+    restaurant_db["location"] = {
+        "type": "Point",
+        "coordinates": [float(restaurant.longitude), float(restaurant.latitude)]
+    }
     result = restaurantes_collection.insert_one(restaurant_db)
     return RestaurantOnHold(
         id=str(result.inserted_id),
@@ -27,6 +33,38 @@ def get_all_restaurant_on_hold() -> List[RestaurantOnHold] | None:
                 latitude=float(restaurant.get("latitude"))
             )
             restaurants_list.append(restaurant_obj)
+        return restaurants_list
+    else:
+        return None
+
+
+def get_nearby_restaurants(longitude: float, latitude: float, max_meters: int )-> List[RestaurantOnHold] | None:
+    # Consultamos usando el índice geoespacial
+    query = {
+        "location": {
+            "$nearSphere": {
+                "$geometry": {
+                    "type": "Point",
+                    "coordinates": [longitude, latitude]
+                },
+                "$maxDistance": max_meters
+            }
+        }
+    }
+
+    cursor = restaurantes_collection.find(query)
+    restaurants_list = []
+    if cursor is not None:
+        for doc in cursor:
+            restaurants_list.append(RestaurantOnHold(
+                id=str(doc["_id"]),
+                restaurant_name=doc["restaurant_name"],
+                link=doc["link"],
+                description=doc["description"],
+                longitude=doc["longitude"],
+                latitude=doc["latitude"]
+            ))
+
         return restaurants_list
     else:
         return None

@@ -6,6 +6,7 @@ from utils.codes_errors import ErrorCodes
 import traceback
 from users import exceptions
 from restaurant_on_hold import exceptions as restaurant_exception, models, services as restaurant_services
+from pymongo.errors import OperationFailure
 
 
 app = FastAPI()
@@ -240,4 +241,57 @@ def get_restaurant_on_hold()-> Dict:
                     "message": f"Internal Server Error."
                 }
             ]
+        }
+
+
+@app.get("/restaurant_on_hold/nearby")
+def get_nearby_restaurants(longitude: float, latitude: float, distance: int = 5000) -> Dict:
+    try:
+        #radio (por defecto 5km)
+        result_restaurants = restaurant_services.get_nearby_restaurants(
+            longitude=longitude,
+            latitude=latitude,
+            radius_meters=distance
+        )
+
+        return {
+            "success": True,
+            "payload": {
+                "restaurants": result_restaurants
+            },
+            "error": []
+        }
+
+    except restaurant_exception.RestaurantsOnHoldNotFounds:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.RESTAURANTS_NOT_FOUND,
+                "title": "No restaurants nearby",
+                "message": f"We couldn't find any restaurants within {distance} meters of your location."
+            }]
+        }
+    except  OperationFailure as e:
+        traceback.print_exc()
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.GEO_ERROR,
+                "title": "Invalid Coordinates",
+                "message": "The coordinates provided are out of the allowed geographic bounds (Latitude -90 to 90, Longitude -180 to 180)."
+            }]
+        }
+
+    except Exception as e:
+        traceback.print_exc()
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.INTERNAL_SERVER_ERROR,
+                "title": "Internal Server Error.",
+                "message": "An error occurred while searching for nearby restaurants."
+            }]
         }
