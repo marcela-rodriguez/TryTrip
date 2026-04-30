@@ -17,5 +17,6 @@ client = MongoClient(MONGO_URL)
 db = client["Trytri"]
 
 # Seleccionar la colección
-collection = db["usuario"]
+usuarios_collection = db["usuario"]
+restaurantes_collection = db["restaurant_on_hold"]
 

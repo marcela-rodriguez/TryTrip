@@ -1,4 +1,4 @@
-from database import conection
+from database.conection import usuarios_collection
 from typing import Dict, Any
 from users.models import User,CreateRequest
 from bson import ObjectId
@@ -6,7 +6,7 @@ from bson import ObjectId
 
 def insert_user(user: CreateRequest) -> User:
     user_dict=user.model_dump()
-    result = conection.collection.insert_one(user_dict)
+    result = usuarios_collection.insert_one(user_dict)
     return User(
         id=str(result.inserted_id),
         names=user_dict.get("names"),
@@ -19,7 +19,7 @@ def insert_user(user: CreateRequest) -> User:
 
 
 def get_user_by_email(email: str) -> User | None:
-    result = conection.collection.find_one({"email": email})
+    result = usuarios_collection.find_one({"email": email})
     if result:
         return  User(
         id=str(result.get("_id")),
@@ -34,7 +34,7 @@ def get_user_by_email(email: str) -> User | None:
         return None
 
 def get_user_by_id(id: str) -> User | None:
-    result = conection.collection.find_one({"_id": ObjectId(id)})
+    result = usuarios_collection.find_one({"_id": ObjectId(id)})
     if result:
         return  User(
         id=str(result.get("_id")),
@@ -50,7 +50,7 @@ def get_user_by_id(id: str) -> User | None:
 
 def update_user_pin(user_id: str, new_pin: str) -> bool:
     try:
-        result = conection.collection.update_one(
+        result = usuarios_collection.update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"pin": new_pin}}
         )
