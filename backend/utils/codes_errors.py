@@ -12,7 +12,7 @@ class ErrorCodes(IntEnum):
     INVALID_CREDENTIALS = 4008
     TOKEN_EXPIRED = 4009
     INVALID_TOKEN = 4010
-    CURRENTLY_USED_PASSWORD = 4011 #contraseña usada actualemnte
+    CURRENTLY_USED_PASSWORD = 4011
     UPDATE_FAILED = 4012
 
 

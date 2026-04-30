@@ -7,11 +7,11 @@ class CreateRequest(BaseModel):
     email: str
     phone_country_code: str
     phone_number: str
-    pin: int
+    pin: str
 
 class LoginRequest(BaseModel):
     email: str
-    pin: int
+    pin: str
 
 class User(BaseModel):
     id:str
@@ -20,7 +20,7 @@ class User(BaseModel):
     email: str
     phone_country_code: str
     phone_number: str
-    pin: int
+    pin: str
 
 class ChangePasswordRequest(BaseModel):
-    new_password: int
+    new_password: str

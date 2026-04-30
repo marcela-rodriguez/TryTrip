@@ -14,7 +14,6 @@ app = FastAPI()
 def create_user(user:CreateRequest)-> Dict:
     try:
         result = services.create_user(user=user)
-        print(result)
         if result:
             user = result.model_dump(exclude={"pin"})
             return {
@@ -83,7 +82,6 @@ def create_user(user:CreateRequest)-> Dict:
         }
     except Exception as e:
         traceback.print_exc()
-        print(e)
         return {
             "success": False,
             "payload": {},
@@ -100,8 +98,8 @@ security = HTTPBearer()
 @app.patch("/change_password")
 def change_password(request: ChangePasswordRequest, auth=Depends(security)) -> Dict:
     try:
-        token = auth.credentials
-        services.change_password(token=token, new_password=request.new_password)
+        token: str = auth.credentials
+        services.change_password(token=token, new_password=request)
         return {
             "success": True,
             "payload": {"message": "Password updated successfully"},
@@ -257,7 +255,6 @@ def login_user(login:LoginRequest)-> Dict:
         }
     except Exception as e:
         traceback.print_exc()
-        print(e)
         return {
             "success": False,
             "payload": {},

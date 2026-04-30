@@ -29,8 +29,8 @@ def create_user(user: CreateRequest) -> User:
         validate_user(user=user)
         exists_user = db.get_user_by_email(email=user.email)
         if exists_user is None:
-            user = db.insert_user(user=user.model_dump())
-            return user
+            user_respond = db.insert_user(user=user)
+            return user_respond
         else:
             raise exceptions.UserAlreadyRegistered()
 
@@ -38,7 +38,7 @@ def create_user(user: CreateRequest) -> User:
 def validate_login_request(login: LoginRequest):
     if re.fullmatch(pattern=regex.EMAIL_REGEX, string=login.email) is None:
         raise exceptions.EmailNotMatch()
-    if re.fullmatch(pattern=regex.PIN, string=str(login.pin)) is None:
+    if re.fullmatch(pattern=regex.PIN, string=login.pin) is None:
         raise exceptions.InvalidPinFormat()
 
 def create_token(data: dict, expires_delta: timedelta, secret_key: str):
@@ -64,52 +64,42 @@ def create_tokens(user_id: str):
 def authenticate_user(login: LoginRequest) -> User:
         validate_login_request(login=login)
         user= db.get_user_by_email(email=login.email)
-        print(user)
         if not user:
             raise exceptions.UserNotFound()
         if user.pin != login.pin:
-            print("pint invalid")
             raise exceptions.InvalidCredentials()
 
         return user
 
 
-def authenticate_token(token: str, secre: str)->str:
+def authenticate_token(token: str, secret: str)->str:
     try:
-        payload = jwt.decode(token, secre, algorithms=[constants.ALGORITHM])
-        user_id = payload.get("user_id")
-
+        payload = jwt.decode(token, secret, algorithms=[constants.ALGORITHM])
+        user_id: str | None = payload.get("user_id")
         if user_id is None:
-            raise exceptions.InvalidCredentialsToken()#no ceunta con el algoritmo
+            raise exceptions.InvalidCredentialsToken()
 
         if not ObjectId.is_valid(user_id):
-            raise exceptions.InvalidToken()  # O una excepción de "ID malformado"
+            raise exceptions.InvalidToken()
         return user_id
     except ExpiredSignatureError:
-    # Específicamente cuando el tiempo 'exp' ya pasó
         raise exceptions.TokenExpired()
 
     except JWTError:
         raise exceptions.InvalidToken()
 
-def change_password(token:str,new_password:ChangePasswordRequest)->User:
-    user_id=authenticate_token(token=token,secre=constants.ACCESS_SECRET_KEY)
-    print(user_id)
-    if re.fullmatch(pattern=regex.PIN, string=str(new_password)) is None:
+def change_password(token:str,new_password:ChangePasswordRequest)->None:
+    user_id=authenticate_token(token=token,secret=constants.ACCESS_SECRET_KEY)
+    if re.fullmatch(pattern=regex.PIN, string=new_password.new_password) is None:
         raise exceptions.InvalidPinFormat()
     user=db.get_user_by_id(id=user_id)
     if not user:
          raise exceptions.UserNotFound()
-    print(user.pin)
-    print(new_password)
     if user.pin == new_password:
-         raise exceptions.CurrentlyUsedPassword()
-    user_db=db.update_user_pin(user_id=user_id,new_pin=new_password)
+        raise exceptions.CurrentlyUsedPassword()
+    user_db=db.update_user_pin(user_id=user_id,new_pin=new_password.new_password)
     if not user_db:
         raise exceptions.UserUpdateFailed()
-
-    user.pin = new_password
-    return user
 
 
 
