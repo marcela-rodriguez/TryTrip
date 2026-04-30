@@ -301,12 +301,10 @@ def get_restaurant_on_hold()-> Dict:
     try:
         result_get_restaurants = restaurant_services.get_restaurants_on_hold()
         if result_get_restaurants:
-            restaurants = result_get_restaurants  #Observacion se tiene un estandar en el payload retornar {} pero al ser una lista
-                                                    #Se investiga que seria bueno cuando es individual se retorne un {} pero al ser multiples registros se recomeinta []
-                                                    #Se deja a disucion para corregir o dejar como esta.
+            restaurants = result_get_restaurants
             return {
                 "success": True,
-                "payload": restaurants,
+                "payload": {"restaurants":restaurants},
                 "error": []
             }
     except restaurant_exception.RestaurantsOnHoldNotFounds as e:
