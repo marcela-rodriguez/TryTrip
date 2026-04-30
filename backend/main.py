@@ -1,10 +1,11 @@
-from fastapi import FastAPI,HTTPException
-from users.models import CreateRequest, LoginRequest
+from fastapi import FastAPI,Depends
+from users.models import CreateRequest, LoginRequest,ChangePasswordRequest
 from users import services
 from typing import Dict
 from utils.codes_errors import ErrorCodes
 import traceback
 from users import exceptions
+from fastapi.security import HTTPBearer
 from restaurant_on_hold import exceptions as restaurant_exception, models, services as restaurant_services
 from pymongo.errors import OperationFailure
 
@@ -84,7 +85,6 @@ def create_user(user:CreateRequest)-> Dict:
         }
     except Exception as e:
         traceback.print_exc()
-        print(e)
         return {
             "success": False,
             "payload": {},
@@ -97,6 +97,99 @@ def create_user(user:CreateRequest)-> Dict:
             ]
         }
 
+security = HTTPBearer()
+@app.patch("/change_password")
+def change_password(request: ChangePasswordRequest, auth=Depends(security)) -> Dict:
+    try:
+        token: str = auth.credentials
+        services.change_password(token=token, new_password=request)
+        return {
+            "success": True,
+            "payload": {"message": "Password updated successfully"},
+            "error": []
+        }
+
+    except exceptions.TokenExpired as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.TOKEN_EXPIRED,
+                "title": "Token Expired",
+                "message": "Your session has expired. Please login again."
+            }]
+        }
+    except exceptions.InvalidToken as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.INVALID_TOKEN,
+                "title": "Invalid Token",
+                "message": "The provided token is invalid or malformed."
+            }]
+        }
+    except exceptions.InvalidCredentialsToken as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.INVALID_CREDENTIALS,
+                "title": "Invalid Credentials",
+                "message": "Token does not contain valid user information."
+            }]
+        }
+    except exceptions.InvalidPinFormat as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.WRONG_PIN_FORMAT,
+                "title": "Wrong pin format",
+                "message": "The new pin does not meet the required 4-digit format."
+            }]
+        }
+    except exceptions.UserNotFound as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.USER_NOT_FOUND,
+                "title": "User not found",
+                "message": "The user associated with this token no longer exists."
+            }]
+        }
+    except exceptions.CurrentlyUsedPassword as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.CURRENTLY_USED_PASSWORD,
+                "title": "Password already in use",
+                "message": "The new PIN cannot be the same as the current one."
+            }]
+        }
+    except exceptions.UserUpdateFailed as e:
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.UPDATE_FAILED,
+                "title": "Update Failed",
+                "message": "Could not update the PIN in the database."
+            }]
+        }
+    except Exception as e:
+        traceback.print_exc()
+        return {
+            "success": False,
+            "payload": {},
+            "error": [{
+                "code": ErrorCodes.INTERNAL_SERVER_ERROR,
+                "title": "Internal Server Error",
+                "message": "An unexpected error occurred."
+            }]
+        }
 
 @app.post("/login")
 def login_user(login:LoginRequest)-> Dict:
@@ -165,7 +258,6 @@ def login_user(login:LoginRequest)-> Dict:
         }
     except Exception as e:
         traceback.print_exc()
-        print(e)
         return {
             "success": False,
             "payload": {},

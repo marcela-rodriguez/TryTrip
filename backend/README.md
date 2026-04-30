@@ -15,19 +15,23 @@ Instalación
 1. Clona el repositorio:
     git clone https://github.com/marcela-rodriguez/TryTrip.git
     ```
+   
 2. Entra en la carpeta del proyecto:
     cd trytrip
-   
 
-3. Instala las dependencias:
+3. crear entorno virtual
+    python -m venv .venv
+    source .venv/bin/activate 
+
+4. Instala las dependencias:
     pip install -r requirements.txt 
 
 
-4. Inicia el servidor:
+5. Inicia el servidor:
     fastapi dev main.py
 
 
-5. Abre el navegador en `http://127.0.0.1:8000/docs`.
+6. Abre el navegador en `http://127.0.0.1:8000/docs`.
 
 
 
